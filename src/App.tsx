@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './page/Login';
 import Register from './page/Register';
 import Product from './components/Product';
@@ -10,6 +10,7 @@ const App: React.FC = () => {
     <Router>
       <Navbar/>
       <Routes>
+        <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/product" element={<Product />} />
