@@ -1,53 +1,113 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios from '../api/axios'; 
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setLogin } from '../slices/authSlice';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://ample-curiosity-production-21b0.up.railway.app/auth/login', {
+      // mendapatkan token
+      const res = await axios.post('/auth/login', {
         username,
         password,
       });
-      console.log('token', res.data.data.access_token);
-      localStorage.setItem('token', res.data.data.access_token);
+      const token = res.data.data.access_token;
+      
+    
+      const userRes = await axios.get(`/users/${username}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = userRes.data.data;
+      console.log("User: ",user)
+
+      // simpan token pada redux
+      dispatch(setLogin({
+        token,
+        user,
+      }));
+
       setMessage('Login success!');
-      navigate('/product');
-    } catch (err) {
+      setShowModal(true);
+
+    
+      setTimeout(() => {
+        setShowModal(false);
+        navigate('/product');
+      }, 1500);
+    } catch (err: any) {
       console.error(err);
-      setMessage('Login failed.');
+      setMessage(err.response?.data?.message || 'Login failed.');
+      setShowModal(true);
     }
   };
 
   return (
-    <div className="max-w-sm mx-auto mt-10">
-      <h2 className="text-xl font-bold mb-4">Login</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          placeholder="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="border p-2 w-full"
-        />
-        <input
-          type="password"
-          placeholder="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="border p-2 w-full"
-        />
-        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
-          Login
-        </button>
-      </form>
-      <p className="mt-4">{message}</p>
+    
+    <div className="flex items-center justify-center min-h-screen bg-base-200">
+      <div className="card w-full max-w-sm shadow-2xl bg-base-100">
+        <div className="card-body">
+          <h2 className="text-2xl font-bold text-center">Login</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Username</span>
+              </label>
+              <input
+                type="text"
+                placeholder="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="input input-bordered"
+                required
+              />
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Password</span>
+              </label>
+              <input
+                type="password"
+                placeholder="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input input-bordered"
+                required
+              />
+            </div>
+
+            <div className="form-control mt-6">
+              <button type="submit" className="btn btn-primary">Login</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Notification</h3>
+            <p className="py-4">{message}</p>
+            <div className="modal-action">
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
